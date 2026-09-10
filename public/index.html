@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Novi filmi</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:      #0c0c0e;
+  --s1:      #141416;
+  --s2:      #1c1c1f;
+  --s3:      #242428;
+  --b:       rgba(255,255,255,.07);
+  --bh:      rgba(255,255,255,.14);
+  --t1:      #edebe6;
+  --t2:      #8e8c87;
+  --t3:      #4e4d4a;
+  --red:     #e0403f;
+  --gold:    #f5c518;
+  --r:       9px;
+}
+
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+       background: var(--bg); color: var(--t1); min-height: 100vh;
+       -webkit-font-smoothing: antialiased; }
+
+/* ── Header ──────────────────────────────────── */
+header {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(12,12,14,.9); backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--b);
+  height: 52px; padding: 0 1.25rem;
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+}
+.logo { display: flex; align-items: center; gap: 8px; text-decoration: none; }
+.logo-icon {
+  width: 26px; height: 26px; border-radius: 7px; background: var(--red);
+  display: flex; align-items: center; justify-content: center; font-size: 14px;
+}
+.logo-name { font-size: 14px; font-weight: 600; color: var(--t1); letter-spacing: -.02em; }
+
+.hdr-right { display: flex; align-items: center; gap: 10px; }
+#countdown { font-size: 11px; color: var(--t3); font-variant-numeric: tabular-nums; min-width: 100px; text-align: right; }
+
+.btn {
+  height: 30px; padding: 0 12px; border-radius: 6px;
+  border: 1px solid var(--bh); background: var(--s2); color: var(--t1);
+  font-size: 12px; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 5px;
+  transition: background .12s;
+}
+.btn:hover:not(:disabled) { background: var(--s3); }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+.btn svg { flex-shrink: 0; }
+.btn.spin svg { animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Layout ──────────────────────────────────── */
+main { max-width: 1300px; margin: 0 auto; padding: 1.25rem; }
+
+.toolbar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: .75rem; flex-wrap: wrap; margin-bottom: 1rem;
+}
+.chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.chip {
+  height: 26px; padding: 0 10px; border-radius: 20px;
+  border: 1px solid var(--b); background: transparent; color: var(--t2);
+  font-size: 11px; cursor: pointer; transition: all .12s; white-space: nowrap;
+}
+.chip:hover { border-color: var(--bh); color: var(--t1); }
+.chip.on { background: rgba(224,64,63,.13); border-color: var(--red); color: var(--red); }
+.meta { font-size: 12px; color: var(--t3); white-space: nowrap; }
+
+/* ── Grid ────────────────────────────────────── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: .9rem;
+}
+
+/* ── Card ────────────────────────────────────── */
+.card {
+  background: var(--s1); border: 1px solid var(--b); border-radius: 11px;
+  overflow: hidden; display: flex; flex-direction: column;
+  transition: border-color .15s, transform .15s;
+}
+.card:hover { border-color: var(--bh); transform: translateY(-2px); }
+
+.poster {
+  position: relative; aspect-ratio: 2/3; background: var(--s2); overflow: hidden;
+}
+.poster img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  transition: transform .3s;
+}
+.card:hover .poster img { transform: scale(1.04); }
+.poster-ph {
+  width: 100%; height: 100%; display: flex; align-items: center;
+  justify-content: center; font-size: 40px; color: var(--t3);
+}
+
+.badge-new {
+  position: absolute; top: 7px; left: 7px;
+  background: var(--red); color: #fff;
+  font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px;
+  letter-spacing: .06em; text-transform: uppercase;
+}
+.badge-type {
+  position: absolute; top: 7px; right: 7px;
+  background: rgba(0,0,0,.75); color: rgba(255,255,255,.85);
+  font-size: 9px; font-weight: 600; padding: 2px 6px; border-radius: 4px;
+  letter-spacing: .05em; backdrop-filter: blur(4px);
+}
+
+.body { padding: 11px; flex: 1; display: flex; flex-direction: column; gap: 7px; }
+
+.title { font-size: 13.5px; font-weight: 600; line-height: 1.35; color: var(--t1); letter-spacing: -.01em; }
+
+.genres { display: flex; flex-wrap: wrap; gap: 4px; }
+.genre {
+  font-size: 10px; padding: 2px 7px; border-radius: 20px;
+  background: var(--s2); color: var(--t2); border: 1px solid var(--b);
+}
+
+.synopsis {
+  font-size: 11.5px; line-height: 1.6; color: var(--t2);
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.synopsis.open { -webkit-line-clamp: unset; }
+.more { font-size: 11px; color: var(--t3); background: none; border: none; cursor: pointer; padding: 0; }
+.more:hover { color: var(--t2); }
+
+.details { display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--t2); }
+.dr { display: flex; gap: 5px; align-items: flex-start; }
+.dl { color: var(--t3); min-width: 52px; flex-shrink: 0; }
+.imdb-tag {
+  display: inline-block; background: var(--gold); color: #000;
+  font-size: 9px; font-weight: 800; padding: 1px 5px; border-radius: 3px;
+  margin-right: 4px; vertical-align: middle;
+}
+.rt-tag {
+  display: inline-block; background: #fa320a; color: #fff;
+  font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 3px;
+  margin-left: 4px; vertical-align: middle;
+}
+
+.foot {
+  margin-top: auto; padding-top: 7px; border-top: 1px solid var(--b);
+  font-size: 10px; color: var(--t3);
+}
+
+/* ── States ──────────────────────────────────── */
+.state {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 5rem 2rem; gap: 10px; text-align: center;
+}
+.state-icon { font-size: 44px; opacity: .22; }
+.state-h { font-size: 15px; font-weight: 600; }
+.state-b { font-size: 13px; color: var(--t2); max-width: 320px; line-height: 1.6; }
+.ring {
+  width: 34px; height: 34px; border-radius: 50%;
+  border: 2.5px solid var(--b); border-top-color: var(--red);
+  animation: spin .75s linear infinite;
+}
+
+.err {
+  background: rgba(224,64,63,.1); border: 1px solid rgba(224,64,63,.25);
+  border-radius: 7px; padding: 9px 13px; font-size: 12px; color: #f09090;
+  margin-bottom: 1rem; display: none;
+}
+
+.poll-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; color: var(--t2);
+  background: var(--s2); border: 1px solid var(--b);
+  border-radius: 20px; padding: 3px 10px;
+}
+.pdot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--red);
+  animation: pulse 1.3s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.35;transform:scale(.65)} }
+
+@media(max-width:550px){
+  main{padding:.9rem;}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:.7rem;}
+  #countdown{display:none;}
+}
+</style>
+</head>
+<body>
+<header>
+  <a class="logo" href="/">
+    <div class="logo-icon">🎬</div>
+    <span class="logo-name">Novi filmi</span>
+  </a>
+  <div class="hdr-right">
+    <span id="countdown"></span>
+    <button class="btn" id="refreshBtn" onclick="triggerRefresh()">
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M1 4s1.5-3 7-3c3.9 0 7 3.1 7 7s-3.1 7-7 7c-3.5 0-6.4-2.5-7-6"/>
+        <path d="M1 1v3h3"/>
+      </svg>
+      Osveži
+    </button>
+  </div>
+</header>
+
+<main>
+  <div id="err" class="err"></div>
+  <div class="toolbar">
+    <div class="chips" id="chips">
+      <button class="chip on" onclick="setGenre('vsi',this)">Vsi</button>
+    </div>
+    <span class="meta" id="meta"></span>
+  </div>
+  <div id="content">
+    <div class="state"><div class="ring"></div><div class="state-h">Nalagam…</div></div>
+  </div>
+</main>
+
+<script>
+let movies = [], genre = 'vsi', expanded = {}, nextRun = null, cdTimer = null, pollTimer = null;
+
+async function load() {
+  try {
+    const d = await fetch('/api/movies').then(r => r.json());
+    movies = d.movies || [];
+    nextRun = d.status?.nextRun ? new Date(d.status.nextRun) : null;
+    const st = d.status?.state;
+    hideErr();
+    buildChips();
+    renderGrid(st);
+    startCountdown();
+  } catch(e) { showErr('Napaka: ' + e.message); }
+}
+
+async function triggerRefresh() {
+  const btn = document.getElementById('refreshBtn');
+  btn.classList.add('spin'); btn.disabled = true;
+  try {
+    await fetch('/api/refresh', { method: 'POST' });
+    clearInterval(pollTimer);
+    pollTimer = setInterval(async () => {
+      const s = await fetch('/api/status').then(r=>r.json());
+      if (s.status?.state !== 'running') {
+        clearInterval(pollTimer);
+        btn.classList.remove('spin'); btn.disabled = false;
+        await load();
+      }
+    }, 3000);
+  } catch(e) { btn.classList.remove('spin'); btn.disabled = false; showErr(e.message); }
+}
+
+function buildChips() {
+  const all = new Set(movies.flatMap(m => m.genre || []));
+  const c = document.getElementById('chips');
+  c.innerHTML = `<button class="chip ${genre==='vsi'?'on':''}" onclick="setGenre('vsi',this)">Vsi</button>`;
+  [...all].sort().forEach(g => {
+    c.innerHTML += `<button class="chip ${genre===g?'on':''}" onclick="setGenre(${JSON.stringify(g)},this)">${e(g)}</button>`;
+  });
+}
+
+function setGenre(g, el) {
+  genre = g;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+  renderGrid();
+}
+
+function renderGrid(state) {
+  const filtered = genre === 'vsi' ? movies : movies.filter(m => (m.genre||[]).includes(genre));
+  const meta = document.getElementById('meta');
+  const content = document.getElementById('content');
+
+  if (state === 'running') {
+    meta.innerHTML = `<span class="poll-badge"><span class="pdot"></span>Preverjam…</span>`;
+  } else {
+    meta.textContent = filtered.length ? `${filtered.length} film${filtered.length===1?'':'ov'}` : '';
+  }
+
+  if (!movies.length && state === 'running') {
+    content.innerHTML = `<div class="state"><div class="ring"></div><div class="state-h">Pridobivam filme…</div><div class="state-b">Ob prvem zagonu traja do 2 minuti.</div></div>`;
+    return;
+  }
+  if (!movies.length) {
+    content.innerHTML = `<div class="state"><div class="state-icon">🎬</div><div class="state-h">Ni filmov</div><div class="state-b">Naslednja preveritev kmalu.</div></div>`;
+    return;
+  }
+  if (!filtered.length) {
+    content.innerHTML = `<div class="state"><div class="state-icon">🔍</div><div class="state-h">Ni zadetkov</div></div>`;
+    return;
+  }
+
+  content.innerHTML = `<div class="grid">${filtered.map(card).join('')}</div>`;
+}
+
+function card(m) {
+  const id = btoa(encodeURIComponent(m.title)).replace(/[^a-z0-9]/gi,'').slice(0,14);
+  const isNew = m.addedAt && Date.now() - new Date(m.addedAt) < 7_200_000;
+  const syn = m.synopsisSl || m.synopsis || '';
+  const exp = expanded[m.title];
+
+  const img = m.poster
+    ? `<img src="${e(m.poster)}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+    : '';
+  const ph = m.poster ? 'style="display:none"' : '';
+
+  const ratings = [
+    m.imdb ? `<span class="imdb-tag">IMDb</span>${e(m.imdb)}/10` : '',
+    m.rt   ? `<span class="rt-tag">RT</span>${e(m.rt)}` : '',
+  ].filter(Boolean).join(' ');
+
+  return `<div class="card">
+  <div class="poster">
+    ${img}<div class="poster-ph" ${ph}>🎬</div>
+    ${isNew ? '<span class="badge-new">novo</span>' : ''}
+    ${m.releaseType ? `<span class="badge-type">${e(m.releaseType)}</span>` : ''}
+  </div>
+  <div class="body">
+    <div class="title">${e(m.title)}</div>
+    ${(m.genre||[]).length ? `<div class="genres">${m.genre.map(g=>`<span class="genre">${e(g)}</span>`).join('')}</div>` : ''}
+    ${syn ? `
+    <p class="synopsis${exp?' open':''}" id="s${id}">${e(syn)}</p>
+    <button class="more" onclick="tog(${JSON.stringify(m.title)},'s${id}',this)">${exp?'▲ manj':'▼ več'}</button>` : ''}
+    <div class="details">
+      ${m.cast?.length ? `<div class="dr"><span class="dl">Zasedba</span><span>${e(m.cast.slice(0,3).join(', '))}</span></div>` : ''}
+      ${m.runtime ? `<div class="dr"><span class="dl">Trajanje</span><span>${e(m.runtime)}</span></div>` : ''}
+      ${ratings ? `<div class="dr"><span class="dl">Ocena</span><span>${ratings}</span></div>` : ''}
+    </div>
+    <div class="foot">${ago(m.addedAt)}</div>
+  </div>
+</div>`;
+}
+
+function tog(title, elId, btn) {
+  expanded[title] = !expanded[title];
+  document.getElementById(elId)?.classList.toggle('open', expanded[title]);
+  btn.textContent = expanded[title] ? '▲ manj' : '▼ več';
+}
+
+function startCountdown() {
+  clearInterval(cdTimer);
+  const el = document.getElementById('countdown');
+  if (!nextRun) { el.textContent = ''; return; }
+  cdTimer = setInterval(() => {
+    const rem = Math.max(0, nextRun - Date.now());
+    if (!rem) { el.textContent = 'osvežujem…'; return; }
+    const m = Math.floor(rem/60000), s = Math.floor((rem%60000)/1000);
+    el.textContent = `nasl. osvežitev: ${m}:${String(s).padStart(2,'0')}`;
+  }, 1000);
+}
+
+function ago(iso) {
+  if (!iso) return '';
+  const s = (Date.now() - new Date(iso)) / 1000;
+  if (s < 60) return 'ravnokar';
+  if (s < 3600) return `pred ${Math.floor(s/60)} min`;
+  if (s < 86400) return `pred ${Math.floor(s/3600)}h`;
+  if (s < 172800) return 'včeraj';
+  return new Date(iso).toLocaleDateString('sl-SI',{day:'numeric',month:'short'});
+}
+
+function e(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function showErr(msg) { const el=document.getElementById('err'); el.textContent=msg; el.style.display='block'; }
+function hideErr() { document.getElementById('err').style.display='none'; }
+
+load();
+setInterval(load, 30_000); // refresh data every 30s
+</script>
+</body>
+</html>
